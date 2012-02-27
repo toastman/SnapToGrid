@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+<style>
+  * { -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; }
+  .wrapper {width: 900px; height:500px; margin: auto; overflow: hidden; clear: both; position: relative;}
+  #tools {width: 250px;height: 400px; border: 1px solid black; float: left}
+  #grid {width: 600px; height: 400px; overflow: hidden; outline: 1px solid #6495ed; outline-offset: -1px; float: right; position: relative;}
+
+
+  .tool {width: 50px; height: 50px; margin: 5px; padding: 0; line-height: 50px; text-align: center;
+    outline: 1px solid #556b2f; background: #ff8c00; color:#f8f8ff; float: left;}
+  .widget {margin: 0; padding: 5px; width: 50px; height: 50px;
+      outline: 1px solid #556b2f; background: #ff8c00; position: absolute; opacity: 0.8; color: #333333; font-size: 12px; text-align: left;}
+  .ui-draggable-dragging {background-color: #6495ed; opacity: 0.6; z-index: 1000}
+
+  .canvas {position: absolute; right: 0; top: 0; width: 600px; height: 400px;}
+
+  /*Jquery RESIZABLE START ======================================================*/
+  .ui-resizable { position: relative; } .ui-resizable-handle { display: block; font-size: 0.1px; position: absolute; z-index: 99999; }
+  .ui-resizable-disabled .ui-resizable-handle, .ui-resizable-autohide .ui-resizable-handle { display: none; }
+  .ui-resizable-n { cursor: n-resize; height: 7px; left: 0; top: -5px; width: 100%; }
+  .ui-resizable-s { bottom: -5px; cursor: s-resize; height: 7px; left: 0; width: 100%; }
+  .ui-resizable-e { cursor: e-resize; height: 100%; right: -5px; top: 0; width: 7px; }
+  .ui-resizable-w { cursor: w-resize; height: 100%; left: -5px; top: 0; width: 7px; }
+  .ui-resizable-se { bottom: 1px; cursor: se-resize; height: 12px; right: 1px; width: 12px; }
+  .ui-resizable-sw { bottom: -5px; cursor: sw-resize; height: 9px; left: -5px; width: 9px; }
+  .ui-resizable-nw { cursor: nw-resize; height: 9px; left: -5px; top: -5px; width: 9px; }
+  .ui-resizable-ne { cursor: ne-resize; height: 9px; right: -5px; top: -5px; width: 9px; }
+  /*Jquery RESIZABLE END ======================================================*/
+
+</style>
+<div class="wrapper">
+  <div id="tools"></div>
+  <div class="canvas"></div>
+  <div id="grid"></div>
+</div>
+
+<script src="jquery-1.7.1.min.js"></script>
+<script src="jquery-ui-1.8.18.custom.min.js"></script>
+<script src="jquery-collide.js"></script>
+
+<script type="text/javascript" src="Grid.js"></script>
+
+<script type="text/javascript">
+  var tool = function(){
+    var self = this;
+    var _configs = {step: 10, templ: "<div class='tool'></div>"};
+
+    var _add = function(row, coll, color){
+      self.container.append($(_configs.templ).append(row + " x " + coll).data("coll",coll).data("row",row).data("color",color).css("background-color",color));
+    };
+
+    var _init = function(container){
+      self.container = container;
+    };
+
+    return {
+      init: _init,
+      add: _add}
+  }();
+
+  tool.init($("#tools"));
+  tool.add(1, 1, "#70CAFF");
+  tool.add(1, 2, "#E47E55");
+  tool.add(2, 3, "#C8E5C4");
+  tool.add(2, 1, "#F0D64B");
+  tool.add(3, 3, "#BC280A");
+
+  var grid = new Grid($(".canvas"), {width: 600, height:400, step:40});
+  var $grid = $( "#grid" );
+  var $tools = $( "#tools" );
+
+  $( ".tool", $tools ).draggable({
+    revert: "invalid", // when not dropped, the item will revert back to its initial position
+    containment: $(".wrapper"), // stick to demo-frame if present
+    helper: function(){return $("<div class='tool'></div>").width($(this).data("coll")*grid.step).height($(this).data("row")*grid.step)},
+    cursor: "move",
+    drag: function( event, ui ){
+      grid.liveX = Math.abs($grid.offset().left - ui.helper.offset().left);
+      grid.liveY = Math.abs($grid.offset().top - ui.helper.offset().top);
+    }
+  });
+
+  $grid.droppable({
+    accept: ".tool",
+    activeClass: "ui-state-highlight",
+    drop: function( event, ui ){
+      var $item = $("<div class='widget'></div>").width(ui.draggable.data("coll")*grid.step).height(ui.draggable.data("row")*grid.step).css("background-color",ui.draggable.data("color"));
+      $item.draggable({
+             containment: "parent",
+             grid: [ grid.step,grid.step ],
+             cursor: "move",
+             collide: 'block',
+             snapStep: grid.step,
+             stop: function( event, ui ){
+               $(this).html($(this).position().left + ", " + $(this).position().top);
+             }
+           })
+           .css({left:grid.snap(grid.liveX),top:grid.snap(grid.liveY)})
+           .appendTo($grid)
+           .html($item.position().left + ", " + $item.position().top);
+
+      /*$item.resizable({
+        containment: "parent",
+        grid: grid.step + 10,
+        minHeight: grid.step,
+        minWidth:grid.step});*/
+    }
+  });
+
+
+</script>
+
+
+
+</body>
+</html>;
